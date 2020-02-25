@@ -2,7 +2,6 @@ package com.robot.android.currencyapp.server
 
 import com.google.gson.GsonBuilder
 import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
-import com.robot.android.currencyapp.BuildConfig
 import com.robot.android.currencyapp.Constants.Companion.baseUrl
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -31,12 +30,7 @@ class RetrofitFactory {
             val builder = OkHttpClient.Builder()
             builder.connectTimeout(10, TimeUnit.SECONDS)
             builder.readTimeout(10, TimeUnit.SECONDS)
-
             builder.addInterceptor(BaseInterceptor())
-
-            if (BuildConfig.DEBUG) {
-                builder.addInterceptor(headerLoggerInterceptor)
-            }
 
             return builder.build()
         }

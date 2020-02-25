@@ -30,7 +30,6 @@ class CurrenciesViewModel() : ViewModel() {
     init {
         val reqService = RetrofitFactory().builder.create(ICurrrenciesService::class.java)
         currenciesRepository = CurrenciesRepository(reqService)
-        getCurrencies()
     }
 
     //For unit tests to set testRepo and testScope for coroutines
@@ -39,24 +38,32 @@ class CurrenciesViewModel() : ViewModel() {
         this.scope = scope
     }
 
-    fun getCurrencies(baseCurrency: String = "EUR", amount: Double? = null) {
-        scope.launch {
-            val currencies = currenciesRepository?.getCurrencies(baseCurrency)
-            currencies?.let {
-                if (cModel != null) {
-                    amount?.let {
-                        cModel = currencies
-                        recalculateAmounts(amount)
+    fun getCurrencies(hasConnectivity: Boolean, baseCurrency: String = "EUR", amount: Double? = null) {
+        if (hasConnectivity) {
+            scope.launch {
+                val currencies = currenciesRepository?.getCurrencies(baseCurrency)
+                currencies?.let {
+                    if (cModel != null) {
+                        amount?.let {
+                            cModel = currencies
+                            recalculateAmounts(amount)
+                        } ?: postCurrenciesToView(currencies)
+                    } else {
+                        postCurrenciesToView(currencies)
                     }
-                } else {
-                    cModel = currencies
-                    currenciesLiveData.postValue(cModel)
-                }
-                if (currenciesRepository?.getResponseError() != null) {
-                    serverError.postValue(currenciesRepository?.getResponseError())
-                }
-            } ?: serverError.postValue(currenciesRepository?.getResponseError())
+                    if (currenciesRepository?.getResponseError() != null) {
+                        serverError.postValue(currenciesRepository?.getResponseError())
+                    }
+                } ?: serverError.postValue(currenciesRepository?.getResponseError())
+            }
+        } else {
+            serverError.postValue("No Internet Connection")
         }
+    }
+
+    fun postCurrenciesToView(currencies : CurrencyModel) {
+        cModel = currencies
+        currenciesLiveData.postValue(cModel)
     }
 
     fun recalculateAmounts(amount: Double) {

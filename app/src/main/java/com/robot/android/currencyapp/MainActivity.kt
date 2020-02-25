@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.robot.android.currencyapp.databinding.ActivityMainBinding
+import com.robot.android.currencyapp.utils.NetworkUtils
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,7 +23,7 @@ class MainActivity : AppCompatActivity() {
 
     val ratesVisibility: Int
         get() {
-            return currencyModel?.let { VISIBLE } ?: GONE
+            return if (currencyModel != null && error == null) VISIBLE else GONE
         }
 
     val messageVisibility: Int
@@ -56,11 +57,13 @@ class MainActivity : AppCompatActivity() {
                 binding?.viewWrapper = this
                 setListAdapter(it)
             }
+            error = null
         })
 
         viewModel.serverError.observe(this, Observer {
             it?.let {
                 error = it
+                currencyModel = null
                 binding?.viewWrapper = this
             }
         })
@@ -68,6 +71,8 @@ class MainActivity : AppCompatActivity() {
         viewModel.recalculated.observe(this, Observer {
             resetListAdapter(it)
         })
+
+        viewModel.getCurrencies(NetworkUtils.isConnectingToInternet(this))
     }
 
     private fun resetListAdapter(currencies: CurrencyModel?) {
@@ -107,6 +112,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun fetchCurrenciesForNewBase(baseCurrency: String, amount: Double?) {
-        viewModel.getCurrencies(baseCurrency, amount)
+        viewModel.getCurrencies(NetworkUtils.isConnectingToInternet(this), baseCurrency, amount)
+    }
+
+    fun refreshList() {
+        error = null
+        binding?.viewWrapper = this
+        viewModel.getCurrencies(NetworkUtils.isConnectingToInternet(this))
     }
 }
